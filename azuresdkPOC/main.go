@@ -108,6 +108,7 @@ func main() {
 		wg.Add(1)
 		go func(f string) {
 			defer wg.Done()
+			defer done(time.Now(), f)
 
 			// fmt.Println(f)
 
@@ -121,7 +122,6 @@ func main() {
 				BlockSize:/*4*/ 100 * 1024 * 1024,
 				Parallelism:/*16*/ /*50*/ 100})
 			file.Close()
-			done(f)
 			handleErrors(err)
 
 		}(f)
@@ -199,6 +199,8 @@ func FilePathWalkDir(root string) ([]string, error) {
 	return files, err
 }
 
-func done(file string) {
-	fmt.Printf("Done uploading %s at %v\n", file, time.Now().Format("2006-01-02 15:04:05"))
+func done(start time.Time, file string) {
+	elapsed := time.Since(start)
+	nr.RecordCustomMetric(code, 1)
+	fmt.Printf("%s took %s and completed at %v\n", file, elapsed, time.Now().Format("2006-01-02 15:04:05"))
 }
