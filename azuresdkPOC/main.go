@@ -67,7 +67,11 @@ func main() {
 	if err != nil {
 		log.Fatal("Invalid credentials with error: " + err.Error())
 	}
-	p := azblob.NewPipeline(credential, azblob.PipelineOptions{})
+	p := azblob.NewPipeline(credential, azblob.PipelineOptions{
+		Retry: azblob.RetryOptions{
+			TryTimeout: 12 * time.Hour,
+		},
+	})
 
 	// Create a random string for the quick start container
 	containerName := fmt.Sprintf("quickstart-%s", randomString())
@@ -113,10 +117,11 @@ func main() {
 			handleErrors(err)
 
 			fmt.Printf("Uploading the file with blob name: %s\n", f)
-			_, err = azblob.UploadFileToBlockBlob(ctx, file, blobURL, azblob.UploadToBlockBlobOptions{
-				BlockSize: 4 * 1024 * 1024,
-				Parallelism:/*16*/ 50})
+			_, err = azblob.UploadFileToBlockBlob(context.TODO(), file, blobURL, azblob.UploadToBlockBlobOptions{
+				BlockSize:/*4*/ 100 * 1024 * 1024,
+				Parallelism:/*16*/ /*50*/ 100})
 			file.Close()
+			done(f)
 			handleErrors(err)
 
 		}(f)
@@ -192,4 +197,8 @@ func FilePathWalkDir(root string) ([]string, error) {
 		return nil
 	})
 	return files, err
+}
+
+func done(file string) {
+	fmt.Printf("Done uploading %s at %v\n", file, time.Now().Format("2006-01-02 15:04:05"))
 }
